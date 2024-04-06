@@ -1,7 +1,7 @@
 # data
 dataset_name = "oxford_flowers102"
 dataset_repetitions = 5
-num_epochs = 1 #80  # train for at least 50 epochs for good results
+num_epochs = 80  # train for at least 50 epochs for good results
 image_size = 64
 # KID = Kernel Inception Distance, see related section
 kid_image_size = 75

@@ -43,20 +43,20 @@ class KID(keras.metrics.Metric):
     def update_state(self, real_images, generated_images, sample_weight=None):
         real_features = self.encoder(real_images, training=False)
         generated_features = self.encoder(generated_images, training=False)
-        print('write0')
+
         # compute polynomial kernels using the two sets of features
         kernel_real = self.polynomial_kernel(real_features, real_features)
         kernel_generated = self.polynomial_kernel(
             generated_features, generated_features
         )
         kernel_cross = self.polynomial_kernel(real_features, generated_features)
-        print('write1')
+
         # estimate the squared maximum mean discrepancy using the average kernel values
         batch_size = real_features.shape[0]
 
         batch_size_f = ops.cast(batch_size, dtype="float32")
         #batch_size_f = tf.cast(batch_size, dtype="float32")
-        print('write2')
+
         # mean_kernel_real = ops.sum(kernel_real * (1.0 - ops.eye(batch_size))) / (
         #     batch_size_f * (batch_size_f - 1.0)
         # )
@@ -66,19 +66,19 @@ class KID(keras.metrics.Metric):
         # mean_kernel_real = np.sum(kernel_real * (1.0 - np.eye(batch_size))) / (
         #         batch_size_f * (batch_size_f - 1.0)
         # )
-        print('write3')
+
         # mean_kernel_generated = ops.sum(
         #     kernel_generated * (1.0 - ops.eye(batch_size))
         # ) / (batch_size_f * (batch_size_f - 1.0))
         mean_kernel_generated = ops.sum(
             kernel_generated * (1.0 - tf.eye(batch_size))
         ) / (batch_size_f * (batch_size_f - 1.0))
-        print('write4')
+
         mean_kernel_cross = ops.mean(kernel_cross)
         #mean_kernel_cross = ops.mean(kernel_cross)
-        print('write5')
+
         kid = mean_kernel_real + mean_kernel_generated - 2.0 * mean_kernel_cross
-        print('write6')
+
         # update the average KID estimate
         self.kid_tracker.update_state(kid)
 
