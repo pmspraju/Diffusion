@@ -39,15 +39,15 @@ parsed_image_dataset = readobj.readtfrecord(filename)
 #     plt.savefig('image1.png')
 
 # butterfly dataset
-# prepareobj = PrepareData(parsed_image_dataset)
-# train_dataset, val_dataset, full_dataset = prepareobj.prepare_dataset()
+prepareobj = PrepareData(parsed_image_dataset)
+train_dataset, val_dataset, full_dataset = prepareobj.prepare_dataset()
 
 # flower dataset
-split = "train[:80%]+validation[:80%]+test[:80%]"
-prepareobj = PrepareFlowerData(split)
-train_dataset = prepareobj.prepare_dataset()
-split = "train[80%:]+validation[80%:]+test[80%:]"
-val_dataset = prepareobj.prepare_dataset()
+# split = "train[:80%]+validation[:80%]+test[:80%]"
+# prepareobj = PrepareFlowerData(split)
+# train_dataset = prepareobj.prepare_dataset()
+# split = "train[80%:]+validation[80%:]+test[80%:]"
+# val_dataset = prepareobj.prepare_dataset()
 
 # Test the train dataset
 # cnt = 0
@@ -74,8 +74,8 @@ model.compile(
 )
 
 # save the best model based on the validation KID metric
-#checkpoint_path = os.path.join(checkpoint_path_butterfly, "diffusion_model.weights.h5")
-checkpoint_path = os.path.join(checkpoint_path_flower, "diffusion_model.weights.h5")
+checkpoint_path = os.path.join(checkpoint_path_butterfly, "diffusion_model.weights.h5")
+#checkpoint_path = os.path.join(checkpoint_path_flower, "diffusion_model.weights.h5")
 checkpoint_callback = callbacks.ModelCheckpoint(
     filepath=checkpoint_path,
     save_weights_only=True,
@@ -91,7 +91,6 @@ model.normalizer.adapt(train_dataset)
 if os.path.exists(checkpoint_path):
     model.load_weights(checkpoint_path, skip_mismatch=True)
     model.plot_images()
-    model.plot_single_image()
 else:
     # run training and plot generated images periodically
     model.fit(

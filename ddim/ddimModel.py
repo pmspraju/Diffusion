@@ -1,4 +1,6 @@
 # This file contains the implementation of the Diffusion Model
+import os.path
+
 from unetModel import *
 from metricKid import KID
 import matplotlib.pyplot as plt
@@ -183,7 +185,57 @@ class DiffusionModel(tf.keras.Model):
                 plt.imshow(generated_images[index])
                 plt.axis("off")
         plt.tight_layout()
-        plt.savefig(save_image_path_butterfly + 'prediction.png')
-        #plt.savefig(save_image_path_flower + 'prediction.png')
+        #plt.savefig(save_image_path_butterfly + 'prediction.png')
+        plt.savefig(save_image_path_flower + 'prediction.png')
         plt.show()
         plt.close()
+
+    def plot_single_image(self):
+        initial_noise = tf.random.normal(
+            shape=(1, image_size, image_size, 3)
+        )
+        #generated_images = self.reverse_diffusion(initial_noise, plot_diffusion_steps)
+        # reverse diffusion = sampling
+        num_images = initial_noise.shape[0]
+        step_size = 1.0 / plot_diffusion_steps
+
+        # important line:
+        # at the first sampling step, the "noisy image" is pure noise
+        # but its signal rate is assumed to be nonzero (min_signal_rate)
+        image_progression = []
+        next_noisy_images = initial_noise
+        for step in range(plot_diffusion_steps):
+            noisy_images = next_noisy_images
+
+            # Add processed image to list
+            image_progression.append(noisy_images[0])
+
+            # separate the current noisy image to its components
+            diffusion_times = np.ones((num_images, 1, 1, 1)) - step * step_size
+            noise_rates, signal_rates = self.diffusion_schedule(diffusion_times)
+            pred_noises, pred_images = self.denoise(
+                noisy_images, noise_rates, signal_rates, training=False
+            )
+            # network used in eval mode
+
+            # remix the predicted components using the next signal and noise rates
+            next_diffusion_times = diffusion_times - step_size
+            next_noise_rates, next_signal_rates = self.diffusion_schedule(
+                next_diffusion_times
+            )
+            next_noisy_images = (
+                    next_signal_rates * pred_images + next_noise_rates * pred_noises
+            )
+            # this new noisy image will be used in the next step
+
+        generated_images = self.denormalize(pred_images)
+        image_progression.append(generated_images[0])
+
+        #plog the image progression from noise to generated image
+        ncols = len(image_progression)
+        for index in range(ncols):
+            #plt.subplot(1, ncols, index + 1)
+            plt.imshow(image_progression[index])
+            iname = 'image' + str(index) + '.png'
+            #plt.savefig(os.path.join(save_image_path_butterfly, 'progression/') + iname)
+            plt.savefig(os.path.join(save_image_path_flower, 'progression/') + iname)
