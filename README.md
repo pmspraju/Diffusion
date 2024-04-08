@@ -7,8 +7,8 @@ Learn Diffusion
 
 <table>
   <tr>
-    <td><img src="./ddim/assets/flowers.gif" width="250" height="250"></td>
-    <td><img src="./ddim/assets/butterfly.gif" width="250" height="250"></td>
+    <td><img src="./ddim/assets/flowers.gif" width="250" height="250" title="Noise to Flower"></td>
+    <td><img src="./ddim/assets/butterfly.gif" width="250" height="250" title="Noise to butterfly"></td>
   </tr>
 </table>
 
