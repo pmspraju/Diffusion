@@ -5,8 +5,12 @@ Learn Diffusion
 - [DDIM](https://arxiv.org/abs/2105.05233) 
 - https://keras.io/examples/generative/ddim/
 
-<img alt="flowers.gif" height="250" src="./ddim/assets/flowers.gif" width="250"/>
-<img alt="butterfly.gif" height="250" src="./ddim/assets/butterfly.gif" width="250"/>
+<table>
+  <tr>
+    <td><img src="./ddim/assets/flowers.gif" width="250" height="250"></td>
+    <td><img src="./ddim/assets/butterfly.gif" width="250" height="250"></td>
+  </tr>
+</table>
 
 ## DDPM - Diffusion Probabilistic Models
 - [DDPM](https://arxiv.org/abs/2105.05233) 
