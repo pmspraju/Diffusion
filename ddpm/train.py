@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import tensorflow as tf
 from tensorflow.keras import callbacks
-from readData import ReadWriteTFRecord, PrepareData, PrepareFlowerData
+from readData import ReadWriteTFRecord, PrepareData
 from utils import *
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -43,7 +43,7 @@ prepareobj = PrepareData(parsed_image_dataset)
 train_dataset, val_dataset, full_dataset = prepareobj.prepare_dataset()
 
 # flower dataset
-# split = "train[:80%]+validation[:80%]+test[:80%]"
+(ds,) = tfds.load(dataset_name, split=splits, with_info=False, shuffle_files=True)
 # prepareobj = PrepareFlowerData(split)
 # train_dataset = prepareobj.prepare_dataset()
 # split = "train[80%:]+validation[80%:]+test[80%:]"
@@ -60,45 +60,3 @@ train_dataset, val_dataset, full_dataset = prepareobj.prepare_dataset()
 #         print(image.shape)
 #         cnt += 1
 
-from ddimModel import DiffusionModel
-# create and compile the model
-model = DiffusionModel(image_size, widths, block_depth)
-
-#[print(layer.name) for layer in model.layers]
-
-model.compile(
-    optimizer=tf.optimizers.AdamW(
-        learning_rate=learning_rate, weight_decay=weight_decay
-    ),
-    loss=tf.losses.mean_absolute_error,
-)
-
-# save the best model based on the validation KID metric
-checkpoint_path = os.path.join(checkpoint_path_butterfly, "diffusion_model.weights.h5")
-#checkpoint_path = os.path.join(checkpoint_path_flower, "diffusion_model.weights.h5")
-checkpoint_callback = callbacks.ModelCheckpoint(
-    filepath=checkpoint_path,
-    save_weights_only=True,
-    monitor="val_kid",
-    mode="min",
-    save_best_only=True,
-)
-
-# calculate mean and variance of training dataset for normalization
-model.normalizer.adapt(train_dataset)
-
-#  Check if model exists to generate
-if os.path.exists(checkpoint_path):
-    model.load_weights(checkpoint_path, skip_mismatch=True)
-    model.plot_images()
-else:
-    # run training and plot generated images periodically
-    model.fit(
-        train_dataset,
-        epochs=num_epochs,
-        validation_data=val_dataset,
-        callbacks=[
-            callbacks.LambdaCallback(on_epoch_end=model.plot_images),
-            checkpoint_callback,
-        ],
-    )

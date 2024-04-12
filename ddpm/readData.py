@@ -6,6 +6,63 @@ from utils import *
 from keras import backend as ops
 import tensorflow_datasets as tfds
 
+# Prepare Train dataset
+class PrepareData:
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def augment(self, img):
+        """Flips an image left/right randomly."""
+        return tf.image.random_flip_left_right(img)
+
+    def resize_and_rescale(self, img, size):
+        """Resize the image to the desired size first and then
+        rescale the pixel values in the range [-1.0, 1.0].
+
+        Args:
+            img: Image tensor
+            size: Desired image size for resizing
+        Returns:
+            Resized and rescaled image tensor
+        """
+
+        height = tf.shape(img)[0]
+        width = tf.shape(img)[1]
+        crop_size = tf.minimum(height, width)
+
+        img = tf.image.crop_to_bounding_box(
+            img,
+            (height - crop_size) // 2,
+            (width - crop_size) // 2,
+            crop_size,
+            crop_size,
+        )
+
+        # Resize
+        img = tf.cast(img, dtype=tf.float32)
+        img = tf.image.resize(img, size=size, antialias=True)
+
+        # Rescale the pixel values
+        img = img / 127.5 - 1.0
+        img = tf.clip_by_value(img, clip_min, clip_max)
+        return img
+
+    def train_preprocessing(self, x):
+        img = x["image"]
+        img = self.resize_and_rescale(img, size=(img_size, img_size))
+        img = self.augment(img)
+        return img
+
+    def create_dataset(self):
+        ds = self.dataset
+        train_ds = (
+            ds.map(self.train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE)
+            .batch(batch_size, drop_remainder=True)
+            .shuffle(batch_size * 2)
+            .prefetch(tf.data.AUTOTUNE)
+        )
+        return train_ds
+
 class ReadWriteTFRecord:
     def __init__(self, datapath):
         self.datapath = datapath
@@ -70,95 +127,40 @@ class ReadWriteTFRecord:
         parsed_image_dataset = raw_image_dataset.map(self._parse_image_function)
         return parsed_image_dataset
 
-class PrepareData:
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def preprocess_image(self, data):
-        image_raw = data['image_raw']
-        image = tf.image.decode_png(image_raw)
-
-        # center crop image - not necessary for this dataset
-        # height = tf.shape(image)[0]
-        # width  = tf.shape(image)[1]
-        #
-        # crop_size = tf.minimum(height, width)
-        # image = tf.image.crop_to_bounding_box(
-        #     image,
-        #     (height - crop_size) // 2,
-        #     (width - crop_size) // 2,
-        #     crop_size,
-        #     crop_size,
-        # )
-
-        # resize and clip
-        # for image downsampling it is important to turn on antialiasing
-        image = tf.image.resize(image, size=[image_size, image_size], antialias=True)
-        return tf.clip_by_value(image / 255.0, 0.0, 1.0)
-
-    def create_batch(self, ds):
-        dataset = (ds
-                   .map(self.preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
-                   .cache()
-                   .repeat(dataset_repetitions)
-                   .shuffle(10 * batch_size)
-                   .batch(batch_size, drop_remainder=True)
-                   .prefetch(buffer_size=tf.data.AUTOTUNE))
-
-        return dataset
-
-    def prepare_dataset(self):
-        # the validation dataset is shuffled as well, because data order matters
-        # for the KID estimation
-
-        dl = 0
-        for item in self.dataset.as_numpy_iterator():
-            dl += 1
-
-        train_size = int(train_per * dl / 100)
-        val_size = int(val_per * dl / 100)
-
-        train_dataset = self.create_batch(self.dataset.take(train_size))
-        val_dataset   = self.create_batch(self.dataset.skip(train_size))
-
-        full_dataset = self.dataset.map(self.preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
-
-        return train_dataset, val_dataset, full_dataset
-
-class PrepareFlowerData:
-    def __init__(self, split):
-        self.split = split
-
-    def preprocess_image(self, data):
-        # center crop image
-        height = ops.shape(data["image"])[0]
-        width = ops.shape(data["image"])[1]
-        crop_size = ops.minimum(height, width)
-        image = tf.image.crop_to_bounding_box(
-            data["image"],
-            (height - crop_size) // 2,
-            (width - crop_size) // 2,
-            crop_size,
-            crop_size,
-        )
-
-        # resize and clip
-        # for image downsampling it is important to turn on antialiasing
-        image = tf.image.resize(image, size=[image_size, image_size], antialias=True)
-        return ops.clip(image / 255.0, 0.0, 1.0)
-
-    def prepare_dataset(self):
-        # the validation dataset is shuffled as well, because data order matters
-        # for the KID estimation
-        split = self.split
-        return (
-            tfds.load(dataset_name, split=split, shuffle_files=True)
-            .map(self.preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
-            .cache()
-            .repeat(dataset_repetitions)
-            .shuffle(10 * batch_size)
-            .batch(batch_size, drop_remainder=True)
-            .prefetch(buffer_size=tf.data.AUTOTUNE)
-        )
-
-
+# class PrepareFlowerData:
+#     def __init__(self, split):
+#         self.split = split
+#
+#     def preprocess_image(self, data):
+#         # center crop image
+#         height = ops.shape(data["image"])[0]
+#         width = ops.shape(data["image"])[1]
+#         crop_size = ops.minimum(height, width)
+#         image = tf.image.crop_to_bounding_box(
+#             data["image"],
+#             (height - crop_size) // 2,
+#             (width - crop_size) // 2,
+#             crop_size,
+#             crop_size,
+#         )
+#
+#         # resize and clip
+#         # for image downsampling it is important to turn on antialiasing
+#         image = tf.image.resize(image, size=[image_size, image_size], antialias=True)
+#         return ops.clip(image / 255.0, 0.0, 1.0)
+#
+#     def prepare_dataset(self):
+#         # the validation dataset is shuffled as well, because data order matters
+#         # for the KID estimation
+#         split = self.split
+#         return (
+#             tfds.load(dataset_name, split=split, shuffle_files=True)
+#             .map(self.preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
+#             .cache()
+#             .repeat(dataset_repetitions)
+#             .shuffle(10 * batch_size)
+#             .batch(batch_size, drop_remainder=True)
+#             .prefetch(buffer_size=tf.data.AUTOTUNE)
+#         )
+#
+#
