@@ -29,3 +29,10 @@ save_image_path_butterfly = r'/home/nachiketa/Documents/Workspaces/checkpoints/d
 
 checkpoint_path_flower = r'/home/nachiketa/Documents/Workspaces/checkpoints/ddpm/flower/'
 save_image_path_flower = r'/home/nachiketa/Documents/Workspaces/checkpoints/ddpm/flower/images/'
+
+from tensorflow import keras
+def kernel_init(scale):
+    scale = max(scale, 1e-10)
+    return keras.initializers.VarianceScaling(
+        scale, mode="fan_avg", distribution="uniform"
+    )
