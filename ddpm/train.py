@@ -108,15 +108,28 @@ checkpoint_callback = callbacks.ModelCheckpoint(
     save_best_only=True,
 )
 
-# Train the model
-model.fit(
-    train_dataset,
-    epochs=num_epochs,
-    batch_size=batch_size,
-    callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
-               checkpoint_callback,
-               ],
+if os.path.exists(checkpoint_path):
+    # trained on rtx4080 for 80
+    #model.load_weights(checkpoint_path, skip_mismatch=True)
+
+    #load pretrained model
+    checkpoint_dir = os.path.join(checkpoint_path_flower, "checkpoints/diffusion_model_checkpoint")
+    model.ema_network.load_weights(checkpoint_dir)
+
+    #model.plot_images(num_rows=1, num_cols=8)
+    model.plot_single_image()
+
+else:
+    # Train the model
+    model.fit(
+        train_dataset,
+        epochs=num_epochs,
+        batch_size=batch_size,
+        callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images),
+                   checkpoint_callback,
+                   ],
 )
+
 
 
 

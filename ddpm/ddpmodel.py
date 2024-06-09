@@ -3,6 +3,7 @@ from utils import *
 from tensorflow import keras
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 class DiffusionModel(keras.Model):
     def __init__(self, network, ema_network, timesteps, gdf_util, ema=0.999):
@@ -86,4 +87,38 @@ class DiffusionModel(keras.Model):
                 ax[i // num_cols, i % num_cols].axis("off")
 
         plt.tight_layout()
+        plt.savefig(save_image_path_flower + 'prediction.png')
         plt.show()
+
+    def plot_single_image(self):
+        samples = tf.random.normal(
+            shape=(1, img_size, img_size, img_channels), dtype=tf.float32
+        )
+        # 2. Sample from the model iteratively
+        image_progression = []
+        for t in reversed(range(0, self.timesteps)):
+            tt = tf.cast(tf.fill(1, t), dtype=tf.int64)
+            pred_noise = self.ema_network.predict(
+                [samples, tt], verbose=0, batch_size=1
+            )
+            #print('pred noise',pred_noise.shape)
+            samples = self.gdf_util.p_sample(
+                pred_noise, samples, tt, clip_denoised=True
+            )
+            #print('samples',samples.shape)
+            generated_samples = (
+                tf.clip_by_value(samples * 127.5 + 127.5, 0.0, 255.0)
+                .numpy()
+                .astype(np.uint8)
+            )
+
+            image_progression.append(generated_samples[0])
+
+        ncols = len(image_progression)
+        for index in range(ncols):
+            ind = index + 1
+            if ind%50 == 0:
+                plt.imshow(image_progression[index])
+                iname = 'image' + str(index) + '.png'
+                # plt.savefig(os.path.join(save_image_path_butterfly, 'progression/') + iname)
+                plt.savefig(os.path.join(save_image_path_flower, 'progression/') + iname)

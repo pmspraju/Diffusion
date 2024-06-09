@@ -1,6 +1,6 @@
 # data
 batch_size = 32
-num_epochs = 1  # Just for the sake of demonstration
+num_epochs = 80  # Just for the sake of demonstration
 total_timesteps = 1000
 norm_groups = 8  # Number of groups used in GroupNormalization layer
 learning_rate = 2e-4
