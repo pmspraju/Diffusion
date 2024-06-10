@@ -27,7 +27,7 @@ Learn Diffusion
 
 <table>
   <tr>
-    <td><img src="./stablediff/assets/petal-and-fish-150.gif" width="250" height="250" title="Noise to Flower"></td>
-    <td><img src="./stablediff/assets/jc-and-dove-150.gif" width="250" height="250" title="Noise to Flower"></td>
+    <td><img src="./stablediff/assets/petal-and-fish-150.gif" width="250" height="250" title="petal to fish"></td>
+    <td><img src="./stablediff/assets/jc-and-dove-150.gif" width="250" height="250" title="hermione to dove"></td>
   </tr>
 </table>
